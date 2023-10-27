@@ -21,28 +21,28 @@ DataSet == ProcSet
 Init == /\ cores = [i \in ProcSet |-> [ state |-> "Invalid", data |-> CHOOSE x \in DataSet : TRUE ]]
         /\ data = CHOOSE x \in DataSet : TRUE 
 
-DemotUniqueClean(self, state) == \E i \in ProcSet : /\ cores[i].state = state
+DemoteToSharedClean(self, state) == \E i \in ProcSet : /\ cores[i].state = state
                         /\ cores' = [cores EXCEPT ![self].state = "SharedClean", ![self].data = cores[i].data, ![i].state = "SharedClean"]
                         /\ data' = cores[i].data
 
-PushToOwnerState(self) == \E i \in ProcSet : /\ cores[i].state = "UniqueDirty"
+PromoteToSharedDirty(self) == \E i \in ProcSet : /\ cores[i].state = "UniqueDirty"
                         /\ cores' = [cores EXCEPT ![self].state = "SharedClean", ![self].data = cores[i].data, ![i].state = "SharedDirty"]
                         /\ data' = cores[i].data
 
-GainExclusivity(self) == \A i \in ProcSet : cores[i].state = "Invalid"
+PromoteToUniqueClean(self) == \A i \in ProcSet : cores[i].state = "Invalid"
                             /\ cores' = [cores EXCEPT ![self].state = "UniqueClean", ![self].data = data]
                             /\ data' = data
 
-GainSharedStatus(self) == \A i \in ProcSet : cores[i].state /= "UniqueClean"
+PromoteToSharedClean(self) == \A i \in ProcSet : cores[i].state /= "UniqueClean"
                 /\ cores[i].state /= "UniqueDirty"
                 /\ \E j \in ProcSet : cores[j].state = "SharedClean"
                 /\ cores' = [cores EXCEPT ![self].state = "SharedClean", ![self].data = data]
                 /\ data' = data
 
-PerformRead(self) == DemotUniqueClean(self, "UniqueClean") 
-                    \/ PushToOwnerState(self) 
-                    \/ GainExclusivity(self)
-                    \/ GainSharedStatus(self)
+PerformRead(self) == DemoteToSharedClean(self, "UniqueClean") 
+                    \/ PromoteToSharedDirty(self) 
+                    \/ PromoteToUniqueClean(self)
+                    \/ PromoteToSharedClean(self)
 
 PerformWrite(self, invalidateOthers) == LET d == CHOOSE x \in DataSet: TRUE IN
                         /\ cores' = [i \in ProcSet |-> 
