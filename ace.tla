@@ -21,7 +21,7 @@ DataSet == ProcSet
 Init == /\ cores = [i \in ProcSet |-> [ state |-> "Invalid", data |-> CHOOSE x \in DataSet : TRUE ]]
         /\ data = CHOOSE x \in DataSet : TRUE 
 
-DemoteToSharedClean(self, state) == \E i \in ProcSet : /\ cores[i].state = state
+DemoteToSharedClean(self) == \E i \in ProcSet : /\ cores[i].state = "UniqueClean"
                         /\ cores' = [cores EXCEPT ![self].state = "SharedClean", ![self].data = cores[i].data, ![i].state = "SharedClean"]
                         /\ data' = cores[i].data
 
@@ -39,7 +39,7 @@ PromoteToSharedClean(self) == \A i \in ProcSet : cores[i].state /= "UniqueClean"
                 /\ cores' = [cores EXCEPT ![self].state = "SharedClean", ![self].data = data]
                 /\ data' = data
 
-PerformRead(self) == DemoteToSharedClean(self, "UniqueClean") 
+PerformRead(self) == DemoteToSharedClean(self) 
                     \/ PromoteToSharedDirty(self) 
                     \/ PromoteToUniqueClean(self)
                     \/ PromoteToSharedClean(self)
